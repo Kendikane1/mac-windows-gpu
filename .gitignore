@@ -1,0 +1,33 @@
+# Private configuration and runtime state
+.local/
+*.local.json
+*.local.ps1
+.env
+.env.*
+!.env.example
+# Environments, caches, and generated results
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+outputs/
+artifacts/
+cache/
+logs/
+*.log
+# Never publish connection credentials or model data
+*.pem
+*.key
+id_ed25519*
+id_rsa*
+known_hosts*
+authorized_keys*
+jpserver-*.json
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+.DS_Store
+Thumbs.db
