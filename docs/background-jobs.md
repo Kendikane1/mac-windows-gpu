@@ -52,6 +52,8 @@ After more steps appear, compare the old completed prefix with the new one. The 
 
 Atomic replacement prevents a partial JSON write from replacing the previous checkpoint. A stop between calculation and save can repeat that uncommitted calculation; this example promises no duplicated **committed steps**, not universal exactly-once external side effects or power-loss-proof storage.
 
+On Windows, a reader or scanner can briefly prevent replacement. The example retries known sharing/access errors up to 20 times, waiting 50 ms between attempts. Persistent denial still fails and leaves the previous checkpoint intact; it does not delete the destination or silently discard the error.
+
 ## Your own job
 
 Create an ignored arguments JSON array and register a new unique task name with your project's exact Python, script, and working directory. Do not pass secrets as command-line arguments. `-WhatIf` previews registration. Existing task names and run directories are refused to protect work. Inspect errors and partial directories before retrying.

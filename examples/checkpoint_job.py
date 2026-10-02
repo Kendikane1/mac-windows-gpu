@@ -28,7 +28,16 @@ def save(path, state):
         json.dump(state, handle, indent=2)
         handle.flush()
         os.fsync(handle.fileno())
-    os.replace(temporary, path)
+    # Windows readers/scanners can briefly deny replacement. Keep the old
+    # checkpoint intact and retry only known Windows sharing/access errors.
+    for attempt in range(20):
+        try:
+            os.replace(temporary, path)
+            return
+        except PermissionError as error:
+            if getattr(error, "winerror", None) not in (5, 32, 33) or attempt == 19:
+                raise
+            time.sleep(0.05)
 
 
 def main():

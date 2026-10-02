@@ -17,7 +17,7 @@ Date: **2026-10-02**. Native Windows, Python 3.12.14, uv 0.12.13.
 | New minimal environment install/GPU run | NOT TESTED | Avoided a duplicate large installation; historical GPU evidence is separate |
 | Generalized Jupyter/task live deployment | NOT TESTED | Existing private workstation services were preserved |
 | Mac browser/disconnect tests of this checkout | NOT TESTED | Requires the Mac |
-| GitHub Actions | NOT TESTED locally | Workflow included; remote result must be checked after publishing |
+| Initial GitHub Actions run | FAIL | Windows file-access denial during checkpoint replacement; see follow-up below |
 
 The current lock includes newer transitive versions than the historical workstation, including Jupyter Server 2.21.1. Do not claim that the historical GPU/Jupyter runtime tests validated this new resolved environment. Install and test it on the target machine before relying on it.
 
@@ -31,3 +31,7 @@ Remove-Item Env:MACOSX_DEPLOYMENT_TARGET
 ```
 
 Use a Python 3.12 interpreter. A dry run can fetch resolution metadata but does not install the environment. Documentation links point to official upstream guidance; upstream changes should trigger review rather than unrecorded configuration changes.
+
+## Publication follow-up: 2026-10-03
+
+The [first Windows CI run](https://github.com/Kendikane1/mac-windows-gpu/actions/runs/37036150684) found a transient `WinError 5` during checkpoint replacement while progress was being read. The follow-up adds bounded retries for Windows sharing/access errors, with regression tests for recovery and for persistent denial preserving the old checkpoint. The expanded local suite passes **10 tests**. Consult the [workflow runs](https://github.com/Kendikane1/mac-windows-gpu/actions/workflows/check.yml) for remote results on the exact commit you use; source tests still do not establish Mac connectivity or live task deployment.

@@ -8,6 +8,8 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest import mock
+import runpy
 
 ROOT = Path(__file__).resolve().parents[1]
 CHECKPOINT = ROOT / "examples" / "checkpoint_job.py"
@@ -28,6 +30,41 @@ def wait_for_steps(path, minimum, process):
 
 
 class CheckpointTests(unittest.TestCase):
+    def test_temporary_windows_lock_retries_atomic_replace(self):
+        save = runpy.run_path(str(CHECKPOINT))["save"]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            path.write_text('{"old": true}')
+            locked = PermissionError("temporary sharing violation")
+            locked.winerror = 32
+            replace = os.replace
+            calls = []
+
+            def flaky_replace(source, destination):
+                calls.append(1)
+                if len(calls) == 1:
+                    raise locked
+                replace(source, destination)
+
+            with mock.patch("os.replace", side_effect=flaky_replace), mock.patch("time.sleep"):
+                save(path, {"new": True})
+            self.assertEqual(len(calls), 2)
+            self.assertEqual(json.loads(path.read_text()), {"new": True})
+
+    def test_persistent_windows_lock_is_bounded_and_preserves_old_state(self):
+        save = runpy.run_path(str(CHECKPOINT))["save"]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            original = '{"old": true}'
+            path.write_text(original)
+            locked = PermissionError("persistent access denial")
+            locked.winerror = 5
+            with mock.patch("os.replace", side_effect=locked) as replace, mock.patch("time.sleep"):
+                with self.assertRaises(PermissionError):
+                    save(path, {"new": True})
+            self.assertEqual(replace.call_count, 20)
+            self.assertEqual(path.read_text(), original)
+
     def test_forced_stop_and_resume_preserves_prefix(self):
         with tempfile.TemporaryDirectory() as directory:
             state_path = Path(directory) / "checkpoint.json"
